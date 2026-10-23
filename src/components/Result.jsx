@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { r } from '../lib/reveal.js'
 import { voiceLabel, QUESTIONS } from '../config.js'
+import { renderCall } from '../lib/phone.js'
 
 const TITLES = {
   match: ['It’s a ', 'date.'],
@@ -10,10 +11,31 @@ const TITLES = {
 }
 
 export default function Result({ outcome, onRestart }) {
-  const { history = [], verdict = {}, setup, cast, wasCloned, matchAnswers = [], matchName = '', prefs = {} } =
-    outcome || {}
+  const {
+    history = [], verdict = {}, setup, cast, wasCloned, matchAnswers = [], matchName = '', prefs = {}, audio = [],
+  } = outcome || {}
   const [a, b] = TITLES[verdict.outcome] || TITLES.unclear
   const [copied, setCopied] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  // Builds the file on this phone from the audio you heard, then saves it. Nothing is uploaded.
+  async function downloadAudio() {
+    setSaving(true)
+    try {
+      const blob = await renderCall(audio)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')
+      a.href = url
+      a.download = `its-ai-match-call-${stamp}.wav`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   // Who says what, e.g. "Kappa (you): …" / "Marcus (match): …"
   const userName = prefs.name?.trim()
@@ -82,6 +104,19 @@ export default function Result({ outcome, onRestart }) {
         </button>
       </div>
 
+      {audio.length > 0 && (
+        <div className="download rv" style={r(3.3)}>
+          <button className="tool" onClick={downloadAudio} disabled={saving}>
+            <DownloadIcon /> {saving ? 'Preparing audio…' : 'Download audio'}
+          </button>
+          <p className="field-note">
+            {wasCloned
+              ? 'This file contains your cloned voice. It’s yours: keep it or delete it. If you download it, it’s the only copy anywhere. If you don’t, nothing remains.'
+              : 'We keep nothing. Download it and it’s the only copy; leave this page and the call is gone.'}
+          </p>
+        </div>
+      )}
+
       {/* Only this prints: the conversation, who says what. Rendered outside the app so nothing else gets in. */}
       {createPortal(
         <div className="print-sheet">
@@ -130,5 +165,10 @@ const PrintIcon = () => (
     <path d="M7 9V4h10v5" />
     <rect x="4" y="9" width="16" height="7" rx="2" />
     <path d="M7 14h10v6H7z" />
+  </svg>
+)
+const DownloadIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
   </svg>
 )

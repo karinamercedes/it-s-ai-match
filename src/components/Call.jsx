@@ -139,6 +139,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
 
       setStatus('ringing')
       const history = []
+      const audio = [] // the exact voice lines you hear, kept in memory for the optional download
       let pending = prepare(0, setup.first, [])
       pending.catch(() => {})
       await line.ring()
@@ -150,6 +151,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
         const turn = await pending
         if (stopped.current) return
         history.push({ speaker: turn.speaker, text: turn.text })
+        audio.push(turn.buffer)
         if (i + 1 < CALL.turns) {
           pending = prepare(i + 1, other(turn.speaker), [...history])
           pending.catch(() => {})
@@ -169,7 +171,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       const v = await api.verdict(history)
       line.close()
       if (!stopped.current)
-        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '' })
+        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '', audio })
     } catch (e) {
       destroyClone()
       if (!stopped.current) {
