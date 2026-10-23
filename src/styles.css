@@ -289,6 +289,24 @@ textarea:focus { outline: none; border-color: var(--blue-1); box-shadow: 0 0 0 4
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; font: 500 16px/1.6 var(--head); }
 
+/* ───────── Copy / print the conversation (small, muted) ───────── */
+.tools { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: calc(var(--gap) * -0.6); }
+.tool {
+  display: inline-flex; align-items: center; gap: 8px; padding: 4px 0; border: 0; background: none;
+  color: var(--faint); font: 500 14px/1 var(--head); cursor: pointer; transition: color 0.25s;
+}
+.tool:hover { color: var(--white); }
+.print-sheet { display: none; }
+
+@media print {
+  html, body { height: auto; overflow: visible; background: #fff; color: #000; }
+  #root { display: none !important; }
+  .print-sheet { display: block; padding: 0; font: 400 12pt/1.5 Georgia, serif; color: #000; }
+  .print-sheet h1 { font: 600 16pt/1.2 Arial, sans-serif; margin: 0 0 4pt; }
+  .print-sheet .print-meta { color: #555; margin: 0 0 16pt; font-size: 10pt; }
+  .print-sheet p { margin: 0 0 8pt; break-inside: avoid; }
+}
+
 /* ───────── Decoration layer (behind the content, whole slide) ───────── */
 .art { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .glow, .piece { position: absolute; }
