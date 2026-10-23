@@ -8,7 +8,7 @@ const TITLES = {
 }
 
 export default function Result({ outcome, onRestart }) {
-  const { history = [], verdict = {}, setup, cast, wasCloned, matchAnswers = [] } = outcome || {}
+  const { history = [], verdict = {}, setup, cast, wasCloned, matchAnswers = [], matchName = '' } = outcome || {}
   const [a, b] = TITLES[verdict.outcome] || TITLES.unclear
 
   return (
@@ -49,7 +49,7 @@ export default function Result({ outcome, onRestart }) {
 
       {matchAnswers.length > 0 && (
         <details className="heard rv" style={r(3.5)}>
-          <summary>Read your match’s profile (invented by AI)</summary>
+          <summary>Read {matchName ? `${matchName}’s` : 'your match’s'} profile (invented by AI)</summary>
           <dl className="qa">
             {QUESTIONS.map((q, i) => (
               <div key={i}>

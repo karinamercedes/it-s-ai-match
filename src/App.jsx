@@ -8,7 +8,7 @@ import Call from './components/Call.jsx'
 import Result from './components/Result.jsx'
 import { QUESTIONS } from './config.js'
 
-const EMPTY_PREFS = { gender: '', interestedIn: '', goal: '' }
+const EMPTY_PREFS = { name: '', gender: '', interestedIn: '', goal: '' }
 
 export default function App() {
   const [index, setIndex] = useState(0)

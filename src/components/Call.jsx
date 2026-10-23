@@ -123,8 +123,13 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       // 2. The call.
       const matchProfile = QUESTIONS.map((q, i) => `Q: ${q}\nA: ${profiles.match?.answers?.[i] || ''}`).join('\n\n')
       const agents = {
-        user: { gender: prefs.gender, interestedIn: prefs.interestedIn, profile },
-        match: { gender: setup.matchGender, interestedIn: matchInterest(prefs.gender), profile: matchProfile },
+        user: { name: prefs.name?.trim(), gender: prefs.gender, interestedIn: prefs.interestedIn, profile },
+        match: {
+          name: profiles.match?.name,
+          gender: setup.matchGender,
+          interestedIn: matchInterest(prefs.gender),
+          profile: matchProfile,
+        },
       }
       const prepare = async (i, speaker, history) => {
         const { text } = await api.turn({ me: speaker, agent: agents[speaker], goal: prefs.goal, history, phase: phaseFor(i) })
@@ -164,7 +169,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       const v = await api.verdict(history)
       line.close()
       if (!stopped.current)
-        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [] })
+        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '' })
     } catch (e) {
       destroyClone()
       if (!stopped.current) {
@@ -200,13 +205,13 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
     const loading = profiles.state === 'loading'
     const columns = [
       {
-        title: 'You',
+        title: prefs.name?.trim() ? `You · ${prefs.name.trim()}` : 'You',
         voice: userVoice,
         bullets: [headline(prefs.gender, prefs.interestedIn, prefs.goal), ...(profiles.user?.summary || [])],
         waiting: 'Reading your answers…',
       },
       {
-        title: 'Your match',
+        title: profiles.match?.name ? `Your match · ${profiles.match.name}` : 'Your match',
         voice: voiceLabel(shown.match),
         bullets: [headline(setup.matchGender, matchInterest(prefs.gender), prefs.goal), ...(profiles.match?.summary || [])],
         waiting: 'Inventing your match…',

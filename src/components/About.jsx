@@ -15,6 +15,23 @@ export default function About({ value, onPick, onNext }) {
       </header>
 
       <div className="groups rv" style={r(0)}>
+        <div className="group">
+          <label className="legend" htmlFor="your-name">Your name</label>
+          <input
+            id="your-name"
+            className="name-input"
+            type="text"
+            maxLength={30}
+            autoComplete="off"
+            placeholder="Optional"
+            value={value.name}
+            onChange={(e) => onPick('name', e.target.value)}
+          />
+          <p className="field-note">
+            Your real name, a made-up one, or none at all. It’s never stored. Leave it blank and your AI won’t
+            share a name.
+          </p>
+        </div>
         {CHOICES.map((c) => (
           <fieldset key={c.key} className="group">
             <legend>{c.title}</legend>

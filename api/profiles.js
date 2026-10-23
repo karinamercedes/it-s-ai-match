@@ -37,7 +37,11 @@ export default async function handler(req, res) {
     const list = (a, n) => (Array.isArray(a) ? a.map(String).filter(Boolean).slice(0, n) : [])
 
     res.json({
-      match: { answers: list(match.answers, questions.length), summary: list(match.summary, 4) },
+      match: {
+        name: String(match.name || '').trim().slice(0, 30),
+        answers: list(match.answers, questions.length),
+        summary: list(match.summary, 4),
+      },
       user: { summary: list(user.summary, 4) },
     })
   } catch (e) {

@@ -1,6 +1,9 @@
 import { body, needKey, claude } from './_lib.js'
 import { agentSystem, PHASE_NOTES } from './_prompts.js'
 
+// First name only: letters, spaces, hyphens and apostrophes, max 30 characters.
+const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{M} '’-]/gu, '').trim().slice(0, 30)
+
 // Writes the next line of the call for one of the two AI stand-ins.
 // history: [{ speaker: 'user' | 'match', text }]
 // me: which stand-in is speaking now
@@ -22,7 +25,13 @@ export default async function handler(req, res) {
     if (PHASE_NOTES[phase] && phase !== 'open') last.content += `\n\n${PHASE_NOTES[phase]}`
 
     const raw = await claude({
-      system: agentSystem({ gender: agent.gender, interestedIn: agent.interestedIn, goal, profile: agent.profile }),
+      system: agentSystem({
+        name: cleanName(agent.name),
+        gender: agent.gender,
+        interestedIn: agent.interestedIn,
+        goal,
+        profile: agent.profile,
+      }),
       messages,
       maxTokens: 200,
     })

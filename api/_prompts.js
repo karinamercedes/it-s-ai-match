@@ -20,7 +20,7 @@ export const genderNoun = (g) => (g === 'non-binary' ? 'a non-binary person' : `
 export const interestFor = (userGender) =>
   userGender === 'woman' ? 'women' : userGender === 'man' ? 'men' : 'non-binary people'
 
-export function agentSystem({ gender, interestedIn, goal, profile }) {
+export function agentSystem({ name, gender, interestedIn, goal, profile }) {
   const who = profile
     ? `This is what you said about yourself when you signed up, in your own words:\n${profile}`
     : `You didn't fill in a profile. Work out who you are as the call goes, and stay consistent with whatever you've already said.`
@@ -28,6 +28,12 @@ export function agentSystem({ gender, interestedIn, goal, profile }) {
   return `It's 2026 and everyone is tired of dating apps: the endless swiping, the "hey", the chats that die after three messages. It's A(I) Match skips all that. Two people who matched get one short phone call, about two minutes, and that's it.
 
 You are one of the two people on this call. You are ${genderNoun(gender)}, interested in ${interestedIn || 'anyone'}. You both said you're looking for ${GOALS[goal] || GOALS.casual}.
+
+${
+    name
+      ? `Your first name is ${name}.`
+      : `You haven't shared your name. Never make one up. If they ask, keep it to yourself for now, lightly, the way someone might on a first call.`
+  }
 
 ${who}
 
@@ -74,10 +80,12 @@ Answer each question in the first person, the way this person would say it into 
 Questions:
 ${questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
 
+Also give this person a first name.
+
 Then write a short profile summary of this person: exactly 4 bullet points, each under 10 words, without "I" or "they" (like "Restores old bikes at weekends").
 
 Reply with JSON only:
-{"answers": ["answer 1", "answer 2", "answer 3", "answer 4", "answer 5"], "summary": ["", "", "", ""]}`
+{"name": "", "answers": ["answer 1", "answer 2", "answer 3", "answer 4", "answer 5"], "summary": ["", "", "", ""]}`
 }
 
 export const USER_SUMMARY_PROMPT = `You summarise a dating profile from the person's own answers.
