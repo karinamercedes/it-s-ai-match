@@ -2,8 +2,49 @@
 // band-limited to 300–3400 Hz (like a real phone), a UK ring tone
 // before, and pips after. Pausing suspends the whole line.
 
+// iPhone mutes the browser's audio engine when the ring/silent switch is on.
+// Two fixes, both run on the tap that starts the call:
+// 1. Safari's audioSession API: declare this page as "playback" (like a music app).
+// 2. Older iOS: a silent <audio> element looping in the background does the same.
+let silentEl = null
+
+function silentWavUrl() {
+  const rate = 8000
+  const samples = rate / 2 // half a second
+  const buf = new ArrayBuffer(44 + samples)
+  const v = new DataView(buf)
+  const str = (o, t) => [...t].forEach((ch, i) => v.setUint8(o + i, ch.charCodeAt(0)))
+  str(0, 'RIFF'); v.setUint32(4, 36 + samples, true); str(8, 'WAVE')
+  str(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true)
+  v.setUint32(24, rate, true); v.setUint32(28, rate, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true)
+  str(36, 'data'); v.setUint32(40, samples, true)
+  for (let i = 0; i < samples; i++) v.setUint8(44 + i, 128) // 8-bit silence
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }))
+}
+
+export function unlockPlayback() {
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback'
+  } catch {}
+  try {
+    if (!silentEl) {
+      silentEl = new Audio(silentWavUrl())
+      silentEl.loop = true
+      silentEl.setAttribute('playsinline', '')
+    }
+    silentEl.play().catch(() => {})
+  } catch {}
+}
+
+function releasePlayback() {
+  try {
+    silentEl?.pause()
+  } catch {}
+}
+
 export class PhoneLine {
   constructor() {
+    unlockPlayback()
     const AC = window.AudioContext || window.webkitAudioContext
     this.ctx = new AC()
     const c = this.ctx
@@ -87,6 +128,7 @@ export class PhoneLine {
   }
 
   close() {
+    releasePlayback()
     if (this.ctx.state !== 'closed') this.ctx.close()
   }
 }
