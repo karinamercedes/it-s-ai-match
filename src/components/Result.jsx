@@ -13,11 +13,9 @@ const TITLES = {
 export default function Result({ outcome, onRestart }) {
   const {
     history = [], verdict = {}, setup, cast, wasCloned, matchAnswers = [], matchName = '', prefs = {}, audio = [],
-    matchSummary = [],
+    matchSummary = [], userAnswers = [], userSummary = [],
   } = outcome || {}
   const [a, b] = TITLES[verdict.outcome] || TITLES.unclear
-  const [copied, setCopied] = useState('') // which thing was just copied
-  const [printing, setPrinting] = useState('call') // which sheet the print shows
   const [saving, setSaving] = useState(false)
 
   // Builds the file on this phone from the audio you heard, then saves it. Nothing is uploaded.
@@ -43,43 +41,25 @@ export default function Result({ outcome, onRestart }) {
   const userName = prefs.name?.trim()
   const who = (speaker) =>
     speaker === 'user' ? (userName ? `${userName} (you)` : 'You') : matchName ? `${matchName} (match)` : 'Match'
-  const transcript = history.map((l) => `${who(l.speaker)}: ${l.text}`).join('\n\n')
 
-  // The match's invented profile, as plain text.
-  const matchHead = headline(setup?.matchGender, matchInterest(prefs.gender), prefs.goal)
-  const profileText = [
-    `${matchName || 'Your match'} (invented by AI)`,
-    matchHead,
-    cast ? `Voice: ${voiceLabel(cast.voices.match)}` : '',
-    '',
-    ...matchSummary.map((b) => `- ${b}`),
-    '',
-    ...QUESTIONS.flatMap((q, i) => [`Q: ${q}`, `A: ${matchAnswers[i] || ''}`, '']),
+  // Recap: the call, both profiles and the conversation, on one printable sheet.
+  // The print dialog also saves it as a PDF, on laptop and phone.
+  const profiles = [
+    {
+      title: userName ? `${userName} (you)` : 'You',
+      head: headline(prefs.gender, prefs.interestedIn, prefs.goal),
+      voice: cast ? voiceLabel(cast.voices.user) : '',
+      summary: userSummary,
+      answers: userAnswers,
+    },
+    {
+      title: `${matchName || 'Your match'} (invented by AI)`,
+      head: headline(setup?.matchGender, matchInterest(prefs.gender), prefs.goal),
+      voice: cast ? voiceLabel(cast.voices.match) : '',
+      summary: matchSummary,
+      answers: matchAnswers,
+    },
   ]
-    .join('\n')
-    .trim()
-
-  async function copy(what) {
-    const text = what === 'profile' ? profileText : transcript
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      // older browsers
-      const t = document.createElement('textarea')
-      t.value = text
-      document.body.appendChild(t)
-      t.select()
-      document.execCommand('copy')
-      t.remove()
-    }
-    setCopied(what)
-    setTimeout(() => setCopied(''), 2000)
-  }
-
-  function print(what) {
-    setPrinting(what)
-    setTimeout(() => window.print(), 50) // let the print sheet switch first
-  }
 
   return (
     <>
@@ -117,12 +97,23 @@ export default function Result({ outcome, onRestart }) {
         </ol>
       </details>
 
+      {matchAnswers.length > 0 && (
+        <details className="heard rv" style={r(3.1)}>
+          <summary>Read {matchName ? `${matchName}’s` : 'your match’s'} profile (invented by AI)</summary>
+          <dl className="qa">
+            {QUESTIONS.map((q, i) => (
+              <div key={i}>
+                <dt>{q}</dt>
+                <dd>{matchAnswers[i]}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
+      )}
+
       <div className="tools rv" style={r(3.2)}>
-        <button className="tool" onClick={() => copy('call')}>
-          <CopyIcon /> {copied === 'call' ? 'Copied' : 'Copy conversation'}
-        </button>
-        <button className="tool" onClick={() => print('call')}>
-          <PrintIcon /> Print conversation
+        <button className="tool" onClick={() => window.print()}>
+          <PrintIcon /> Download or print recap
         </button>
       </div>
 
@@ -139,20 +130,34 @@ export default function Result({ outcome, onRestart }) {
         </div>
       )}
 
-      {/* Only this prints: the conversation, who says what. Rendered outside the app so nothing else gets in. */}
+      {/* Only this prints. Rendered outside the app so nothing else gets in. */}
       {createPortal(
         <div className="print-sheet">
-          {printing === 'profile' ? (
-            <>
-              <h1>{matchName || 'Your match'}: profile (invented by AI)</h1>
+          <h1>It’s A(I) Match: call recap</h1>
+          <p className="print-meta">{new Date().toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' })}</p>
+
+          <h2>The call</h2>
+          <p>
+            <strong>{a + b}</strong> {verdict.line}
+          </p>
+          <ul>
+            <li>Your AI wanted a date: {verdict.youWantDate ? 'yes' : 'no'}</li>
+            <li>Your match wanted a date: {verdict.matchWantsDate ? 'yes' : 'no'}</li>
+            <li>Who spoke first: {setup?.first === 'user' ? 'your AI' : 'the match'}</li>
+            {wasCloned && <li>Your cloned voice: deleted after the call</li>}
+          </ul>
+
+          {profiles.map((pr) => (
+            <section key={pr.title}>
+              <h2>{pr.title}</h2>
               <p className="print-meta">
-                {matchHead}
-                {cast ? ` · Voice: ${voiceLabel(cast.voices.match)}` : ''}
+                {pr.head}
+                {pr.voice && ` · Voice: ${pr.voice}`}
               </p>
-              {matchSummary.length > 0 && (
+              {pr.summary.length > 0 && (
                 <ul>
-                  {matchSummary.map((b, i) => (
-                    <li key={i}>{b}</li>
+                  {pr.summary.map((x, i) => (
+                    <li key={i}>{x}</li>
                   ))}
                 </ul>
               )}
@@ -160,47 +165,20 @@ export default function Result({ outcome, onRestart }) {
                 <p key={i}>
                   <strong>{q}</strong>
                   <br />
-                  {matchAnswers[i]}
+                  {pr.answers[i]}
                 </p>
               ))}
-            </>
-          ) : (
-            <>
-              <h1>It’s A(I) Match: call transcript</h1>
-              <p className="print-meta">{new Date().toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' })}</p>
-              {history.map((l, i) => (
-                <p key={i}>
-                  <strong>{who(l.speaker)}:</strong> {l.text}
-                </p>
-              ))}
-            </>
-          )}
+            </section>
+          ))}
+
+          <h2>Conversation</h2>
+          {history.map((l, i) => (
+            <p key={i}>
+              <strong>{who(l.speaker)}:</strong> {l.text}
+            </p>
+          ))}
         </div>,
         document.body
-      )}
-
-      {matchAnswers.length > 0 && (
-        <details className="heard rv" style={r(3.5)}>
-          <summary>Read {matchName ? `${matchName}’s` : 'your match’s'} profile (invented by AI)</summary>
-          <dl className="qa">
-            {QUESTIONS.map((q, i) => (
-              <div key={i}>
-                <dt>{q}</dt>
-                <dd>{matchAnswers[i]}</dd>
-              </div>
-            ))}
-          </dl>
-        </details>
-      )}
-      {matchAnswers.length > 0 && (
-        <div className="tools rv" style={r(3.6)}>
-          <button className="tool" onClick={() => copy('profile')}>
-            <CopyIcon /> {copied === 'profile' ? 'Copied' : 'Copy profile'}
-          </button>
-          <button className="tool" onClick={() => print('profile')}>
-            <PrintIcon /> Print profile
-          </button>
-        </div>
       )}
 
       <blockquote className="rv" style={r(4)}>Your voice is destroyed after the date.</blockquote>
@@ -212,12 +190,6 @@ export default function Result({ outcome, onRestart }) {
   )
 }
 
-const CopyIcon = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="9" y="9" width="11" height="11" rx="2" />
-    <path d="M5 15V6a2 2 0 0 1 2-2h9" />
-  </svg>
-)
 const PrintIcon = () => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M7 9V4h10v5" />

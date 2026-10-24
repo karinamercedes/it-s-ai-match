@@ -300,7 +300,11 @@ textarea:focus { outline: none; border-color: var(--blue-1); box-shadow: 0 0 0 4
 .download { margin-top: calc(var(--gap) * -0.6); }
 .download .field-note { margin-top: 6px; }
 .voice-note .reason { display: block; margin-top: 6px; font-size: 13px; color: var(--faint); word-break: break-word; }
-@media print { .print-sheet ul { margin: 0 0 12pt; padding-left: 16pt; } }
+@media print {
+  .print-sheet ul { margin: 0 0 12pt; padding-left: 16pt; }
+  .print-sheet h2 { font: 600 13pt/1.3 Arial, sans-serif; margin: 18pt 0 6pt; padding-top: 8pt; border-top: 0.5pt solid #bbb; }
+  .print-sheet section { break-inside: auto; }
+}
 .print-sheet { display: none; }
 
 @media print {

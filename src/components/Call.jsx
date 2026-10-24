@@ -184,7 +184,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       const v = await api.verdict(history)
       line.close()
       if (!stopped.current)
-        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '', matchSummary: profiles.match?.summary || [], audio })
+        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '', matchSummary: profiles.match?.summary || [], userAnswers: answers, userSummary: profiles.user?.summary || [], audio })
     } catch (e) {
       destroyClone()
       if (!stopped.current) {
