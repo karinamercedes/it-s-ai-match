@@ -266,6 +266,7 @@ textarea:focus { outline: none; border-color: var(--blue-1); box-shadow: 0 0 0 4
 .transcript li.end { height: 1px; }
 .transcript .who { font: 600 12px/1.4 var(--head); letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
 .transcript li.user .who { color: var(--violet-1); }
+.transcript li.hung-up { font-style: italic; color: var(--faint); }
 .heard .transcript { margin-top: 14px; color: var(--white); }
 
 .voice-note {

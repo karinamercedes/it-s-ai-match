@@ -64,14 +64,15 @@ export default async function handler(req, res) {
         }),
         messages: [
           ...messages.slice(0, -1),
-          { role: 'user', content: `${last.content}\n\n[Say your line out loud. Spoken words only, no actions or brackets.]` },
+          { role: 'user', content: `${last.content}\n\n[Say your line out loud, even if it's just a goodbye. Spoken words only, no actions or brackets.]` },
         ],
         maxTokens: 260,
         wholeSentences: true,
       })
       text = clean(retry)
     }
-    if (!spoken(text)) throw new Error('No spoken line came back')
+    // Still nothing to say out loud: this side has chosen to end the call. That's an outcome, not an error.
+    if (!spoken(text)) return res.json({ text: '', hungUp: true })
 
     res.json({ text })
   } catch (e) {

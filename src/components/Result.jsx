@@ -89,7 +89,7 @@ export default function Result({ outcome, onRestart }) {
         <summary>Read the whole call</summary>
         <ol className="transcript">
           {history.map((l, i) => (
-            <li key={i} className={l.speaker}>
+            <li key={i} className={`${l.speaker} ${l.hungUp ? 'hung-up' : ''}`}>
               <span className="who">{who(l.speaker)}</span>
               {l.text}
             </li>

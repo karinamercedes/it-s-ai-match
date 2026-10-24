@@ -134,7 +134,8 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       }
       // One line of the call: written, then voiced. A failed request is retried once.
       const once = async (speaker, history, phase) => {
-        const { text } = await api.turn({ me: speaker, agent: agents[speaker], goal: prefs.goal, history, phase })
+        const { text, hungUp } = await api.turn({ me: speaker, agent: agents[speaker], goal: prefs.goal, history, phase })
+        if (hungUp) return { speaker, text: '', hungUp: true, phase }
         const buffer = await line.decode(await api.speak(text, voices[speaker].id))
         return { speaker, text, buffer, phase }
       }
@@ -159,6 +160,12 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       for (let i = 0; i < CALL.maxTurns; i++) {
         const turn = await pending
         if (stopped.current) return
+        if (turn.hungUp) {
+          // This side ended the call without a word. Note it in the transcript and hang up.
+          history.push({ speaker: turn.speaker, text: '(hangs up)', hungUp: true })
+          setLines([...history])
+          break
+        }
         history.push({ speaker: turn.speaker, text: turn.text })
         audio.push(turn.buffer)
         if (turn.phase === 'final') finals++
@@ -329,7 +336,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       {subtitles && (
         <ol className="transcript live rv" style={r(3)}>
           {lines.map((l, i) => (
-            <li key={i} className={l.speaker}>
+            <li key={i} className={`${l.speaker} ${l.hungUp ? 'hung-up' : ''}`}>
               <span className="who">{l.speaker === 'user' ? 'You' : 'Match'}</span>
               {l.text}
             </li>
