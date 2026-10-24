@@ -23,7 +23,7 @@ export function needKey(res, name) {
   return true
 }
 
-export async function claude({ system, messages, maxTokens = 300, temperature }) {
+export async function claude({ system, messages, maxTokens = 300, temperature, wholeSentences = false }) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -41,7 +41,13 @@ export async function claude({ system, messages, maxTokens = 300, temperature })
   })
   const data = await r.json()
   if (!r.ok) throw new Error(data?.error?.message || `Anthropic error ${r.status}`)
-  return data.content.filter((c) => c.type === 'text').map((c) => c.text).join('').trim()
+  let text = data.content.filter((c) => c.type === 'text').map((c) => c.text).join('').trim()
+  // If the reply hit the length cap, drop the unfinished sentence so nothing is cut off mid-word.
+  if (wholeSentences && data.stop_reason === 'max_tokens') {
+    const end = Math.max(text.lastIndexOf('.'), text.lastIndexOf('!'), text.lastIndexOf('?'), text.lastIndexOf('…'))
+    if (end > 20) text = text.slice(0, end + 1)
+  }
+  return text
 }
 
 // Pulls the first {...} block out of a model reply and parses it.

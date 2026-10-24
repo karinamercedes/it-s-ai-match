@@ -45,7 +45,8 @@ export default async function handler(req, res) {
         profile: agent.profile,
       }),
       messages,
-      maxTokens: 150,
+      maxTokens: 260,
+      wholeSentences: true,
     })
 
     let text = clean(raw)
@@ -65,7 +66,8 @@ export default async function handler(req, res) {
           ...messages.slice(0, -1),
           { role: 'user', content: `${last.content}\n\n[Say your line out loud. Spoken words only, no actions or brackets.]` },
         ],
-        maxTokens: 150,
+        maxTokens: 260,
+        wholeSentences: true,
       })
       text = clean(retry)
     }

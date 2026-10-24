@@ -8,7 +8,8 @@ export default async function handler(req, res) {
   try {
     const { text = '', voiceId } = body(req)
     if (!voiceId) return res.status(400).json({ error: 'No voice id' })
-    if (!text.trim() || text.length > 600) return res.status(400).json({ error: 'Line is empty or too long' })
+    if (!text.trim()) return res.status(400).json({ error: 'Empty line' })
+    const line = text.length > 900 ? text.slice(0, text.lastIndexOf(' ', 900)) + '…' : text // never refuse a long line
 
     const r = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
           accept: 'audio/mpeg',
         },
         body: JSON.stringify({
-          text,
+          text: line,
           model_id: process.env.ELEVENLABS_TTS_MODEL || 'eleven_flash_v2_5',
           voice_settings: { stability: 0.4, similarity_boost: 0.75 },
         }),
@@ -28,6 +29,8 @@ export default async function handler(req, res) {
     )
     if (!r.ok) {
       const t = await r.text()
+      if (/quota_exceeded|credits|character_limit/i.test(t))
+        throw new Error('Your ElevenLabs credits have run out for this month. Top up or upgrade, then call again.')
       throw new Error(`ElevenLabs ${r.status}: ${t.slice(0, 300)}`)
     }
     res.setHeader('Content-Type', 'audio/mpeg')

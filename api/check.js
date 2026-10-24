@@ -16,6 +16,7 @@ export default async function handler(req, res) {
         out.plan = s.tier
         out.canInstantClone = s.can_use_instant_voice_cloning
         out.voiceSlots = `${s.voice_slots_used} of ${s.voice_limit} used`
+        out.creditsThisMonth = `${s.character_count} of ${s.character_limit} used`
         out.voiceAddsThisMonth = s.max_voice_add_edits ? `${s.voice_add_edit_counter} of ${s.max_voice_add_edits}` : s.voice_add_edit_counter
       } else out.subscription = `can't read (${s?.detail?.message || r.status})`
     } catch (e) {
