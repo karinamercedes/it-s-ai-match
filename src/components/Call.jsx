@@ -7,8 +7,6 @@ import { PhoneLine } from '../lib/phone.js'
 import { r } from '../lib/reveal.js'
 
 const other = (s) => (s === 'user' ? 'match' : 'user')
-const phaseFor = (i) =>
-  i === 0 ? 'open' : i >= CALL.finalFrom ? 'final' : i >= CALL.closingAt ? 'closing' : 'middle'
 const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
 // Why we couldn't use your own voice.
@@ -104,13 +102,15 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       // 1. Your voice: clone it, or fall back to a stock voice.
       let voices = preset
       let fallback = cast?.fallback || null
+      let cloneError = ''
       if (canClone) {
         setStatus('cloning')
         let id = null
         try {
           id = (await api.clone(recorded)).voiceId
-        } catch {
+        } catch (e) {
           fallback = 'failed'
+          cloneError = e.message // shown small under the note, so tests can tell why
         }
         cloneId.current = id
         if (stopped.current) return destroyClone()
@@ -118,7 +118,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
         voices = { user: id ? clonedVoice(id) : stock.user, match: stock.match }
         if (id) fallback = null
       }
-      setCast({ voices, fallback })
+      setCast({ voices, fallback, cloneError })
 
       // 2. The call.
       const matchProfile = QUESTIONS.map((q, i) => `Q: ${q}\nA: ${profiles.match?.answers?.[i] || ''}`).join('\n\n')
@@ -131,29 +131,41 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
           profile: matchProfile,
         },
       }
-      const prepare = async (i, speaker, history) => {
-        const { text } = await api.turn({ me: speaker, agent: agents[speaker], goal: prefs.goal, history, phase: phaseFor(i) })
+      // One line of the call: written, then voiced. A failed request is retried once.
+      const once = async (speaker, history, phase) => {
+        const { text } = await api.turn({ me: speaker, agent: agents[speaker], goal: prefs.goal, history, phase })
         const buffer = await line.decode(await api.speak(text, voices[speaker].id))
-        return { speaker, text, buffer }
+        return { speaker, text, buffer, phase }
       }
+      const prepare = (speaker, history, phase) =>
+        once(speaker, history, phase).catch(() => once(speaker, history, phase))
+
+      // Which moment of the call the next line falls in, judged by the time it will start.
+      const phaseAt = (seconds, i) =>
+        i === 0 ? 'open' : seconds >= CALL.finalAt || i >= CALL.maxTurns - 2 ? 'final' : seconds >= CALL.closingAt ? 'closing' : 'middle'
 
       setStatus('ringing')
       const history = []
       const audio = [] // the exact voice lines you hear, kept in memory for the optional download
-      let pending = prepare(0, setup.first, [])
+      let pending = prepare(setup.first, [], 'open')
       pending.catch(() => {})
+      let finals = 0
       await line.ring()
       if (stopped.current) return
       t0.current = line.now
       setStatus('live')
 
-      for (let i = 0; i < CALL.turns; i++) {
+      for (let i = 0; i < CALL.maxTurns; i++) {
         const turn = await pending
         if (stopped.current) return
         history.push({ speaker: turn.speaker, text: turn.text })
         audio.push(turn.buffer)
-        if (i + 1 < CALL.turns) {
-          pending = prepare(i + 1, other(turn.speaker), [...history])
+        if (turn.phase === 'final') finals++
+        // Each side gets one final line, then the call ends.
+        const more = finals < 2 && i + 1 < CALL.maxTurns
+        if (more) {
+          const startsAt = line.now - t0.current + turn.buffer.duration
+          pending = prepare(other(turn.speaker), [...history], finals > 0 ? 'final' : phaseAt(startsAt, i + 1))
           pending.catch(() => {})
         }
         setLines([...history])
@@ -161,6 +173,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
         await line.play(turn.buffer)
         setSpeaking(null)
         if (stopped.current) return
+        if (!more) break
       }
 
       // 3. Hang up and destroy the clone straight away, before anything else.
@@ -171,7 +184,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       const v = await api.verdict(history)
       line.close()
       if (!stopped.current)
-        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '', audio })
+        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '', matchSummary: profiles.match?.summary || [], audio })
     } catch (e) {
       destroyClone()
       if (!stopped.current) {
@@ -198,6 +211,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
   const note = cast?.fallback && cast.voices?.user && (
     <p className="voice-note">
       <strong>{cast.voices.user.name}</strong> is speaking for you. {FALLBACK[cast.fallback]}
+      {cast.cloneError && <span className="reason">Reason: {cast.cloneError}</span>}
     </p>
   )
 

@@ -42,10 +42,14 @@ export default async function handler(req, res) {
     })
 
     const r = await fetch(`${API}/voices/add`, { method: 'POST', headers: headers(), body: form })
-    const data = await r.json()
-    if (!r.ok) throw new Error(data?.detail?.message || JSON.stringify(data?.detail || data))
+    const data = await r.json().catch(() => ({}))
+    if (!r.ok) {
+      const d = data?.detail
+      throw new Error(`ElevenLabs ${r.status}: ${d?.message || d?.status || (typeof d === 'string' ? d : JSON.stringify(d || data))}`)
+    }
     res.json({ voiceId: data.voice_id })
   } catch (e) {
+    console.error('[clone]', e.message)
     res.status(500).json({ error: e.message })
   }
 }

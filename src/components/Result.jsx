@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { r } from '../lib/reveal.js'
-import { voiceLabel, QUESTIONS } from '../config.js'
+import { voiceLabel, QUESTIONS, headline, matchInterest } from '../config.js'
 import { renderCall } from '../lib/phone.js'
 
 const TITLES = {
@@ -13,9 +13,11 @@ const TITLES = {
 export default function Result({ outcome, onRestart }) {
   const {
     history = [], verdict = {}, setup, cast, wasCloned, matchAnswers = [], matchName = '', prefs = {}, audio = [],
+    matchSummary = [],
   } = outcome || {}
   const [a, b] = TITLES[verdict.outcome] || TITLES.unclear
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState('') // which thing was just copied
+  const [printing, setPrinting] = useState('call') // which sheet the print shows
   const [saving, setSaving] = useState(false)
 
   // Builds the file on this phone from the audio you heard, then saves it. Nothing is uploaded.
@@ -43,20 +45,40 @@ export default function Result({ outcome, onRestart }) {
     speaker === 'user' ? (userName ? `${userName} (you)` : 'You') : matchName ? `${matchName} (match)` : 'Match'
   const transcript = history.map((l) => `${who(l.speaker)}: ${l.text}`).join('\n\n')
 
-  async function copy() {
+  // The match's invented profile, as plain text.
+  const matchHead = headline(setup?.matchGender, matchInterest(prefs.gender), prefs.goal)
+  const profileText = [
+    `${matchName || 'Your match'} (invented by AI)`,
+    matchHead,
+    cast ? `Voice: ${voiceLabel(cast.voices.match)}` : '',
+    '',
+    ...matchSummary.map((b) => `- ${b}`),
+    '',
+    ...QUESTIONS.flatMap((q, i) => [`Q: ${q}`, `A: ${matchAnswers[i] || ''}`, '']),
+  ]
+    .join('\n')
+    .trim()
+
+  async function copy(what) {
+    const text = what === 'profile' ? profileText : transcript
     try {
-      await navigator.clipboard.writeText(transcript)
+      await navigator.clipboard.writeText(text)
     } catch {
       // older browsers
       const t = document.createElement('textarea')
-      t.value = transcript
+      t.value = text
       document.body.appendChild(t)
       t.select()
       document.execCommand('copy')
       t.remove()
     }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setCopied(what)
+    setTimeout(() => setCopied(''), 2000)
+  }
+
+  function print(what) {
+    setPrinting(what)
+    setTimeout(() => window.print(), 50) // let the print sheet switch first
   }
 
   return (
@@ -96,10 +118,10 @@ export default function Result({ outcome, onRestart }) {
       </details>
 
       <div className="tools rv" style={r(3.2)}>
-        <button className="tool" onClick={copy}>
-          <CopyIcon /> {copied ? 'Copied' : 'Copy conversation'}
+        <button className="tool" onClick={() => copy('call')}>
+          <CopyIcon /> {copied === 'call' ? 'Copied' : 'Copy conversation'}
         </button>
-        <button className="tool" onClick={() => window.print()}>
+        <button className="tool" onClick={() => print('call')}>
           <PrintIcon /> Print conversation
         </button>
       </div>
@@ -120,13 +142,39 @@ export default function Result({ outcome, onRestart }) {
       {/* Only this prints: the conversation, who says what. Rendered outside the app so nothing else gets in. */}
       {createPortal(
         <div className="print-sheet">
-          <h1>It’s A(I) Match: call transcript</h1>
-          <p className="print-meta">{new Date().toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' })}</p>
-          {history.map((l, i) => (
-            <p key={i}>
-              <strong>{who(l.speaker)}:</strong> {l.text}
-            </p>
-          ))}
+          {printing === 'profile' ? (
+            <>
+              <h1>{matchName || 'Your match'}: profile (invented by AI)</h1>
+              <p className="print-meta">
+                {matchHead}
+                {cast ? ` · Voice: ${voiceLabel(cast.voices.match)}` : ''}
+              </p>
+              {matchSummary.length > 0 && (
+                <ul>
+                  {matchSummary.map((b, i) => (
+                    <li key={i}>{b}</li>
+                  ))}
+                </ul>
+              )}
+              {QUESTIONS.map((q, i) => (
+                <p key={i}>
+                  <strong>{q}</strong>
+                  <br />
+                  {matchAnswers[i]}
+                </p>
+              ))}
+            </>
+          ) : (
+            <>
+              <h1>It’s A(I) Match: call transcript</h1>
+              <p className="print-meta">{new Date().toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' })}</p>
+              {history.map((l, i) => (
+                <p key={i}>
+                  <strong>{who(l.speaker)}:</strong> {l.text}
+                </p>
+              ))}
+            </>
+          )}
         </div>,
         document.body
       )}
@@ -143,6 +191,16 @@ export default function Result({ outcome, onRestart }) {
             ))}
           </dl>
         </details>
+      )}
+      {matchAnswers.length > 0 && (
+        <div className="tools rv" style={r(3.6)}>
+          <button className="tool" onClick={() => copy('profile')}>
+            <CopyIcon /> {copied === 'profile' ? 'Copied' : 'Copy profile'}
+          </button>
+          <button className="tool" onClick={() => print('profile')}>
+            <PrintIcon /> Print profile
+          </button>
+        </div>
       )}
 
       <blockquote className="rv" style={r(4)}>Your voice is destroyed after the date.</blockquote>

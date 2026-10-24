@@ -25,9 +25,11 @@ export const VOICES = {
 // Below this many recorded seconds we don't try (the clone would sound nothing like you).
 export const MIN_CLONE_SECONDS = 10
 
-// About two minutes: 14 lines, a "30 seconds left" cue at line 11,
-// the last two lines are the decision (ask for a date / answer / let go).
-export const CALL = { turns: 14, closingAt: 10, finalFrom: 12 }
+// The call is timed, not counted: about two minutes of talking.
+// At 80s both sides hear "about thirty seconds left"; from 100s each side gets one
+// last line (ask for a date / answer / let go), then it hangs up.
+// maxTurns is a safety cap so it can never run on (and spend credits).
+export const CALL = { closingAt: 80, finalAt: 100, maxTurns: 20 }
 
 export const MAX_RECORD_SECONDS = 60
 

@@ -27,7 +27,8 @@ export async function clone(samples) {
   const files = []
   let size = 0
   for (const s of samples) {
-    if (size + s.blob.size * 1.37 > 3.5e6) break
+    if (files.length && size + s.blob.size * 1.37 > 3.3e6) break
+    if (s.blob.size * 1.37 > 4.2e6) continue // one note too big to upload on its own
     size += s.blob.size * 1.37
     files.push({ audio: await blobToBase64(s.blob), mimeType: s.blob.type })
   }

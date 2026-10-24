@@ -38,7 +38,7 @@ ${
 ${who}
 
 How to talk:
-- This is a real phone call, spoken out loud. Talk like a person on the phone: short turns, one to three sentences, contractions, the odd "haha" or "wait, really?" if it fits.
+- This is a real phone call, spoken out loud. Talk like a person on the phone: short turns, usually one or two sentences (under 30 words), contractions, the odd "haha" or "wait, really?" if it fits.
 - Say only the words you'd say. No stage directions, no actions in asterisks, no emojis, no narrator, no name labels.
 - Use what you know about yourself. Specific details beat generic small talk.
 - Listen and react to what the other person actually says.
@@ -50,7 +50,7 @@ export const PHASE_NOTES = {
   open: '[The call has just connected. You speak first.]',
   closing: '[About thirty seconds left on the call.]',
   final:
-    '[The call is about to end. This is the last thing you get to say. Decide honestly: ask for a date, answer if they asked, or let it go kindly.]',
+    '[The call is about to end. This is your last line. Decide honestly: ask for a date, answer if they asked, or let it go kindly. Say it out loud, words only.]',
 }
 
 export const TIDY_PROMPT = `You clean up voice-note transcriptions for a dating app profile.

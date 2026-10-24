@@ -2,6 +2,17 @@ import { body, needKey, claude } from './_lib.js'
 import { agentSystem, PHASE_NOTES } from './_prompts.js'
 
 // First name only: letters, spaces, hyphens and apostrophes, max 30 characters.
+const clean = (raw) =>
+  raw
+    .replace(/\*[^*]*\*/g, '') // *laughs*
+    .replace(/\[[^\]]*\]/g, '') // [pause]
+    .replace(/\([^)]*\)/g, '') // (smiles)
+    .replace(/^\s*\p{L}+(?: \p{L}+)?\s*:\s*/u, '') // "Marcus:" label
+    .replace(/^["“]|["”]$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+const spoken = (t) => /\p{L}{2,}/u.test(t) // at least one real word
+
 const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{M} '’-]/gu, '').trim().slice(0, 30)
 
 // Writes the next line of the call for one of the two AI stand-ins.
@@ -33,18 +44,32 @@ export default async function handler(req, res) {
         profile: agent.profile,
       }),
       messages,
-      maxTokens: 200,
+      maxTokens: 150,
     })
 
-    const text = raw
-      .replace(/\*[^*]*\*/g, '') // *laughs*
-      .replace(/\[[^\]]*\]/g, '') // [pause]
-      .replace(/^\s*(you|me|match|them)\s*:\s*/i, '')
-      .replace(/^["“]|["”]$/g, '')
-      .replace(/\s{2,}/g, ' ')
-      .trim()
+    let text = clean(raw)
+    // A reply that was only a stage direction ("[hangs up]") would be silence on the call.
+    // Ask again, words only. This is what made the match go quiet in testing.
+    if (!spoken(text)) {
+      const retry = await claude({
+        system: agentSystem({
+          name: cleanName(agent.name),
+          gender: agent.gender,
+          interestedIn: agent.interestedIn,
+          goal,
+          profile: agent.profile,
+        }),
+        messages: [
+          ...messages.slice(0, -1),
+          { role: 'user', content: `${last.content}\n\n[Say your line out loud. Spoken words only, no actions or brackets.]` },
+        ],
+        maxTokens: 150,
+      })
+      text = clean(retry)
+    }
+    if (!spoken(text)) throw new Error('No spoken line came back')
 
-    res.json({ text: text || '…' })
+    res.json({ text })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
