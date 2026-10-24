@@ -16,20 +16,37 @@ export default function About({ value, onPick, onNext }) {
 
       <div className="groups rv" style={r(0)}>
         <div className="group">
-          <label className="legend" htmlFor="your-name">Your name</label>
-          <input
-            id="your-name"
-            className="name-input"
-            type="text"
-            maxLength={30}
-            autoComplete="off"
-            placeholder="Optional"
-            value={value.name}
-            onChange={(e) => onPick('name', e.target.value)}
-          />
+          <div className="field-row">
+            <div>
+              <label className="legend" htmlFor="your-name">Your name</label>
+              <input
+                id="your-name"
+                className="name-input"
+                type="text"
+                maxLength={30}
+                autoComplete="off"
+                placeholder="Optional"
+                value={value.name}
+                onChange={(e) => onPick('name', e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="legend" htmlFor="your-city">Your city</label>
+              <input
+                id="your-city"
+                className="name-input"
+                type="text"
+                maxLength={40}
+                autoComplete="off"
+                placeholder="Optional"
+                value={value.city}
+                onChange={(e) => onPick('city', e.target.value)}
+              />
+            </div>
+          </div>
           <p className="field-note">
-            Your real name, a made-up one, or none at all. It’s never stored. Leave it blank and your AI won’t
-            share a name.
+            Your real name, a made-up one, or none at all. Leave it blank and your AI won’t share a name. Your
+            city is optional too, but recommended for a local match. Neither is ever stored.
           </p>
         </div>
         {CHOICES.map((c) => (

@@ -39,7 +39,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
     let ignore = false
     setProfiles({ state: 'loading' })
     api
-      .profiles({ questions: QUESTIONS, answers, userGender: prefs.gender, matchGender: setup.matchGender, goal: prefs.goal })
+      .profiles({ questions: QUESTIONS, answers, userGender: prefs.gender, matchGender: setup.matchGender, goal: prefs.goal, city: prefs.city })
       .then((p) => !ignore && setProfiles({ state: 'ready', ...p }))
       .catch((e) => !ignore && setProfiles({ state: 'error', error: e.message }))
     return () => {
@@ -123,9 +123,10 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       // 2. The call.
       const matchProfile = QUESTIONS.map((q, i) => `Q: ${q}\nA: ${profiles.match?.answers?.[i] || ''}`).join('\n\n')
       const agents = {
-        user: { name: prefs.name?.trim(), gender: prefs.gender, interestedIn: prefs.interestedIn, profile },
+        user: { name: prefs.name?.trim(), city: prefs.city, gender: prefs.gender, interestedIn: prefs.interestedIn, profile },
         match: {
           name: profiles.match?.name,
+          city: prefs.city, // same city as you: a date has to be possible
           gender: setup.matchGender,
           interestedIn: matchInterest(prefs.gender),
           profile: matchProfile,
@@ -223,13 +224,13 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       {
         title: prefs.name?.trim() ? `You · ${prefs.name.trim()}` : 'You',
         voice: userVoice,
-        bullets: [headline(prefs.gender, prefs.interestedIn, prefs.goal), ...(profiles.user?.summary || [])],
+        bullets: [headline(prefs.gender, prefs.interestedIn, prefs.goal, prefs.city?.trim()), ...(profiles.user?.summary || [])],
         waiting: 'Reading your answers…',
       },
       {
         title: profiles.match?.name ? `Your match · ${profiles.match.name}` : 'Your match',
         voice: voiceLabel(shown.match),
-        bullets: [headline(setup.matchGender, matchInterest(prefs.gender), prefs.goal), ...(profiles.match?.summary || [])],
+        bullets: [headline(setup.matchGender, matchInterest(prefs.gender), prefs.goal, prefs.city?.trim()), ...(profiles.match?.summary || [])],
         waiting: 'Inventing your match…',
       },
     ]

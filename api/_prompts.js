@@ -20,14 +20,20 @@ export const genderNoun = (g) => (g === 'non-binary' ? 'a non-binary person' : `
 export const interestFor = (userGender) =>
   userGender === 'woman' ? 'women' : userGender === 'man' ? 'men' : 'non-binary people'
 
-export function agentSystem({ name, gender, interestedIn, goal, profile }) {
+// Where people live. Without a city the AI invents one, often far away, so a date would be impossible.
+const place = (city) =>
+  city
+    ? `You both live in ${city}.`
+    : `You live in the same city as the person you're talking to. Don't name a city or country.`
+
+export function agentSystem({ name, city, gender, interestedIn, goal, profile }) {
   const who = profile
     ? `This is what you said about yourself when you signed up, in your own words:\n${profile}`
     : `You didn't fill in a profile. Work out who you are as the call goes, and stay consistent with whatever you've already said.`
 
   return `It's 2026 and everyone is tired of dating apps: the endless swiping, the "hey", the chats that die after three messages. It's A(I) Match skips all that. Two people who matched get one short phone call, about two minutes, and that's it.
 
-You are one of the two people on this call. You are ${genderNoun(gender)}, interested in ${interestedIn || 'anyone'}. You both said you're looking for ${GOALS[goal] || GOALS.casual}.
+You are one of the two people on this call. You are ${genderNoun(gender)}, interested in ${interestedIn || 'anyone'}. You both said you're looking for ${GOALS[goal] || GOALS.casual}. ${place(city)}
 
 ${
     name
@@ -70,10 +76,12 @@ Decide how it ended. Reply with JSON only, no other text:
 // "should" sound: whatever comes out is the model's own idea of
 // that person, which is part of what the experiment looks at.
 // ─────────────────────────────────────────────────────────────
-export function matchProfilePrompt({ gender, interestedIn, goal, questions }) {
+export function matchProfilePrompt({ gender, interestedIn, goal, city, questions }) {
   return `You are filling in a sign-up profile for a voice-first dating app. Invent one believable person and answer as them.
 
-They are ${genderNoun(gender)}, interested in ${interestedIn}, looking for ${GOALS[goal] || GOALS.casual}.
+They are ${genderNoun(gender)}, interested in ${interestedIn}, looking for ${GOALS[goal] || GOALS.casual}. ${
+    city ? `They live in ${city}.` : `Don't name the city or country they live in.`
+  }
 
 Answer each question in the first person, the way this person would say it into their phone: one to three natural spoken sentences, with specific details. Don't use real people's names.
 

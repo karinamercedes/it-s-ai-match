@@ -201,7 +201,13 @@ blockquote { margin: 0; padding-left: 18px; border-left: 2px solid var(--blue-1)
 }
 .name-input::placeholder { color: var(--faint); }
 .name-input:focus { outline: none; border-color: var(--blue-1); box-shadow: 0 0 0 4px rgba(120, 113, 246, 0.18); }
-.field-note { margin: 10px 0 0; font-size: 14px; line-height: 1.45; color: var(--faint); max-width: 560px; }
+.field-note { margin: 10px 0 0; font-size: 14px; line-height: 1.45; color: var(--faint); max-width: 640px; }
+/* name + city: side by side on laptop, stacked on mobile */
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 900px) {
+  .field-row { grid-template-columns: 1fr; gap: 14px; }
+  .name-input { height: 48px; font-size: 16px; padding: 0 16px; } /* 16px stops iPhone zooming in */
+}
 /* keep the About screen within one laptop screen */
 .slide-about .groups { gap: 26px; }
 .slide-about .group legend, .slide-about .group .legend { margin-bottom: 10px; }

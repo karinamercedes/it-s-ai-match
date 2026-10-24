@@ -12,6 +12,9 @@ export function body(req) {
   return b
 }
 
+// Free text from the user (name, city): letters, spaces, hyphens, apostrophes, full stops only.
+export const cleanText = (t, max = 30) => String(t || '').replace(/[^\p{L}\p{M} '’.-]/gu, '').trim().slice(0, max)
+
 export function needKey(res, name) {
   if (!process.env[name]) {
     res.status(500).json({ error: `${name} is not set on the server` })

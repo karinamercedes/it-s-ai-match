@@ -1,4 +1,4 @@
-import { body, needKey, claude } from './_lib.js'
+import { body, needKey, claude, cleanText } from './_lib.js'
 import { agentSystem, PHASE_NOTES } from './_prompts.js'
 
 // First name only: letters, spaces, hyphens and apostrophes, max 30 characters.
@@ -13,7 +13,7 @@ const clean = (raw) =>
     .trim()
 const spoken = (t) => /\p{L}{2,}/u.test(t) // at least one real word
 
-const cleanName = (n) => String(n || '').replace(/[^\p{L}\p{M} '’-]/gu, '').trim().slice(0, 30)
+const cleanName = (n) => cleanText(n, 30)
 
 // Writes the next line of the call for one of the two AI stand-ins.
 // history: [{ speaker: 'user' | 'match', text }]
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
     const raw = await claude({
       system: agentSystem({
         name: cleanName(agent.name),
+        city: cleanText(agent.city, 40),
         gender: agent.gender,
         interestedIn: agent.interestedIn,
         goal,
@@ -54,6 +55,7 @@ export default async function handler(req, res) {
       const retry = await claude({
         system: agentSystem({
           name: cleanName(agent.name),
+          city: cleanText(agent.city, 40),
           gender: agent.gender,
           interestedIn: agent.interestedIn,
           goal,

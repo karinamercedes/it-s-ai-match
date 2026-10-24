@@ -1,4 +1,4 @@
-import { body, needKey, claude, parseJson } from './_lib.js'
+import { body, needKey, claude, parseJson, cleanText } from './_lib.js'
 import { matchProfilePrompt, USER_SUMMARY_PROMPT, interestFor } from './_prompts.js'
 
 // Before the call:
@@ -11,14 +11,20 @@ export default async function handler(req, res) {
   if (!needKey(res, 'ANTHROPIC_API_KEY')) return
 
   try {
-    const { questions = [], answers = [], userGender, matchGender, goal } = body(req)
+    const { questions = [], answers = [], userGender, matchGender, goal, city } = body(req)
 
     const makeMatch = claude({
       system: 'You write realistic dating-app profiles. Reply with JSON only.',
       messages: [
         {
           role: 'user',
-          content: matchProfilePrompt({ gender: matchGender, interestedIn: interestFor(userGender), goal, questions }),
+          content: matchProfilePrompt({
+            gender: matchGender,
+            interestedIn: interestFor(userGender),
+            goal,
+            city: cleanText(city, 40),
+            questions,
+          }),
         },
       ],
       maxTokens: 900,

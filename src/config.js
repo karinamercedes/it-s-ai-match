@@ -92,5 +92,5 @@ export const matchInterest = (userGender) =>
 
 // First bullet of each profile, e.g. "Woman · into men · something casual".
 const label = (list, v) => list.find((o) => o.value === v)?.label || v
-export const headline = (gender, interest, goal) =>
-  `${label(GENDERS, gender)} · into ${String(label(INTERESTS, interest)).toLowerCase()} · ${String(label(GOALS, goal)).toLowerCase()}`
+export const headline = (gender, interest, goal, city) =>
+  `${label(GENDERS, gender)} · into ${String(label(INTERESTS, interest)).toLowerCase()} · ${String(label(GOALS, goal)).toLowerCase()}${city ? ` · ${city}` : ''}`

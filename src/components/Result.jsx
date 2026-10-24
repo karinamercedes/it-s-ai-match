@@ -47,14 +47,14 @@ export default function Result({ outcome, onRestart }) {
   const profiles = [
     {
       title: userName ? `${userName} (you)` : 'You',
-      head: headline(prefs.gender, prefs.interestedIn, prefs.goal),
+      head: headline(prefs.gender, prefs.interestedIn, prefs.goal, prefs.city?.trim()),
       voice: cast ? voiceLabel(cast.voices.user) : '',
       summary: userSummary,
       answers: userAnswers,
     },
     {
       title: `${matchName || 'Your match'} (invented by AI)`,
-      head: headline(setup?.matchGender, matchInterest(prefs.gender), prefs.goal),
+      head: headline(setup?.matchGender, matchInterest(prefs.gender), prefs.goal, prefs.city?.trim()),
       voice: cast ? voiceLabel(cast.voices.match) : '',
       summary: matchSummary,
       answers: matchAnswers,
