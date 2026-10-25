@@ -38,10 +38,9 @@ Mobile: one column, min 100vh, scrolls if needed. Decoration = one gradient half
 - `ANTHROPIC_API_KEY`
 - optional: `ANTHROPIC_MODEL`, `ELEVENLABS_TTS_MODEL`, `ELEVENLABS_STT_MODEL`
 
-## Downloading the call
-The result screen can save the call as a `.wav`. It's rebuilt on the phone from the exact audio played
-(same voice lines, phone filter, ring and hang-up), back to back without pauses: no API calls, nothing uploaded.
-The version without this button is on the `no-download-version` branch.
+## Saved versions (branches)
+- `with-recap-and-audio`: the result screen with 'Download or print recap' and 'Download audio'.
+- `no-download-version`: an earlier version (before the timed call, city field and other fixes).
 
 ## Voice clone
 `/api/clone` makes a temporary clone named `itsaimatch-<time>`; `/api/forget` deletes it when the call ends,

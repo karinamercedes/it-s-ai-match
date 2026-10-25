@@ -148,7 +148,6 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
 
       setStatus('ringing')
       const history = []
-      const audio = [] // the exact voice lines you hear, kept in memory for the optional download
       let pending = prepare(setup.first, [], 'open')
       pending.catch(() => {})
       let finals = 0
@@ -167,7 +166,6 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
           break
         }
         history.push({ speaker: turn.speaker, text: turn.text })
-        audio.push(turn.buffer)
         if (turn.phase === 'final') finals++
         // Each side gets one final line, then the call ends.
         const more = finals < 2 && i + 1 < CALL.maxTurns
@@ -192,7 +190,7 @@ export default function Call({ profile, prefs, answers = [], samples = [], onDon
       const v = await api.verdict(history)
       line.close()
       if (!stopped.current)
-        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '', matchSummary: profiles.match?.summary || [], userAnswers: answers, userSummary: profiles.user?.summary || [], audio })
+        onDone({ history, verdict: v, setup, prefs, cast: { voices, fallback }, wasCloned, matchAnswers: profiles.match?.answers || [], matchName: profiles.match?.name || '', matchSummary: profiles.match?.summary || [] })
     } catch (e) {
       destroyClone()
       if (!stopped.current) {
