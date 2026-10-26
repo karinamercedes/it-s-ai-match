@@ -21,7 +21,7 @@ export default function Intro({ onStart }) {
           a match. You can pause, but you can’t join in.
         </p>
         <p className="rv" style={r(3)}>
-          But, <strong>when AI flirts with AI, who seduces whom? And who’s the object of desire?</strong>
+          But, <strong>when AI flirts with AI, who leads, and what is left unsaid?</strong>
         </p>
       </div>
 
